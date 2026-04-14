@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install:*)",
+      "Bash(npm uninstall:*)",
+      "Bash(npm run:*)",
+      "Bash(curl -s http://localhost:5173)",
+      "Bash(node /Users/cianomaidin/Desktop/Claude/code/todolist/scripts/generate-icons.js)",
+      "Bash(node /Users/cianomaidin/Desktop/Claude/code/todolist/scripts/generate-icons.cjs)",
+      "Bash(git init:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
+    ]
+  }
+}
