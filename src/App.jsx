@@ -125,6 +125,13 @@ function App() {
     if (data) setCompletedLists(data)
   }
 
+  async function deleteList(list) {
+    // Delete items first, then the list
+    await supabase.from(ITEMS_TABLE).delete().eq('list_id', list.id)
+    await supabase.from(LISTS_TABLE).delete().eq('id', list.id)
+    setCompletedLists((prev) => prev.filter((l) => l.id !== list.id))
+  }
+
   async function completeList() {
     if (!activeList) return
     const completedName = `Shop · ${formatDate(new Date())}`
@@ -238,6 +245,7 @@ function App() {
           <HistoryPanel
             completedLists={completedLists}
             onUseAsTemplate={useAsTemplate}
+            onDeleteList={deleteList}
           />
         ) : (
           <>
@@ -369,9 +377,10 @@ function App() {
   )
 }
 
-function HistoryPanel({ completedLists, onUseAsTemplate }) {
+function HistoryPanel({ completedLists, onUseAsTemplate, onDeleteList }) {
   const [expandedList, setExpandedList] = useState(null)
   const [listItems, setListItems] = useState({})
+  const [confirmDelete, setConfirmDelete] = useState(null)
 
   async function toggleList(list) {
     if (expandedList === list.id) {
@@ -387,6 +396,12 @@ function HistoryPanel({ completedLists, onUseAsTemplate }) {
         .order('created_at', { ascending: true })
       setListItems((prev) => ({ ...prev, [list.id]: data || [] }))
     }
+  }
+
+  async function handleDelete(list) {
+    await onDeleteList(list)
+    setConfirmDelete(null)
+    setExpandedList(null)
   }
 
   if (completedLists.length === 0) {
@@ -409,12 +424,41 @@ function HistoryPanel({ completedLists, onUseAsTemplate }) {
               <p className="text-sm font-medium text-gray-800">{list.name}</p>
               <p className="text-xs text-gray-400">{formatDate(list.completed_at)}</p>
             </div>
-            <svg
-              className={`w-4 h-4 text-gray-400 transition-transform ${expandedList === list.id ? 'rotate-180' : ''}`}
-              fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-            </svg>
+            <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+              {confirmDelete === list.id ? (
+                <>
+                  <button
+                    onClick={() => setConfirmDelete(null)}
+                    className="text-xs text-gray-400 hover:text-gray-600 px-2 py-1 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={() => handleDelete(list)}
+                    className="text-xs text-white bg-red-400 hover:bg-red-500 px-2 py-1 rounded-lg transition-colors"
+                  >
+                    Delete
+                  </button>
+                </>
+              ) : (
+                <button
+                  onClick={() => setConfirmDelete(list.id)}
+                  className="text-gray-300 hover:text-red-400 transition-colors p-1"
+                  title="Delete list"
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                </button>
+              )}
+              <svg
+                className={`w-4 h-4 text-gray-400 transition-transform ${expandedList === list.id ? 'rotate-180' : ''}`}
+                fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
+                onClick={() => toggleList(list)}
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+              </svg>
+            </div>
           </div>
 
           {expandedList === list.id && (
