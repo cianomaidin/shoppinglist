@@ -27,6 +27,29 @@ function App() {
   useEffect(() => {
     getOrCreateActiveList()
     fetchCompletedLists()
+
+    // Listen for changes to the lists table so that when one device
+    // completes a list and creates a new one, all other devices
+    // automatically switch to the new active list.
+    const listsChannel = supabase
+      .channel('lists_changes')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: LISTS_TABLE },
+        (payload) => {
+          if (payload.eventType === 'INSERT' && payload.new.status === 'active') {
+            // A new active list was created on another device
+            setActiveList(payload.new)
+            setItems([])
+          } else if (payload.eventType === 'UPDATE' && payload.new.status === 'completed') {
+            // Current list was completed on another device
+            fetchCompletedLists()
+          }
+        }
+      )
+      .subscribe()
+
+    return () => supabase.removeChannel(listsChannel)
   }, [])
 
   // Re-subscribe to items whenever the active list changes
