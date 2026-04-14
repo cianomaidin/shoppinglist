@@ -10,6 +10,7 @@ window.OneSignalDeferred = window.OneSignalDeferred || []
 window.OneSignalDeferred.push(async function (OneSignal) {
   await OneSignal.init({
     appId: import.meta.env.VITE_ONESIGNAL_APP_ID,
+    serviceWorkerPath: '/sw.js',
     serviceWorkerParam: { scope: '/' },
     promptOptions: {
       slidedown: {
