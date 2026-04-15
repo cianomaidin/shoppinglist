@@ -222,8 +222,28 @@ function App() {
     await supabase.from(ITEMS_TABLE).update({ [field]: value }).eq('id', id)
   }
 
+  const CATEGORY_ORDER = [
+    'Fruit & Veg',
+    'Meat & Fish',
+    'Dairy',
+    'Bakery',
+    'Frozen',
+    'Drinks',
+    'Tins & Dry Goods',
+    'Toiletries & Health',
+    'Household',
+    'Other',
+  ]
+
   const unchecked = items.filter((i) => !i.checked)
   const checked = items.filter((i) => i.checked)
+
+  // Group unchecked items by category, preserving aisle order
+  const grouped = CATEGORY_ORDER.reduce((acc, cat) => {
+    const catItems = unchecked.filter((i) => (i.category || 'Other') === cat)
+    if (catItems.length > 0) acc[cat] = catItems
+    return acc
+  }, {})
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col items-center py-8 px-4">
@@ -313,14 +333,21 @@ function App() {
               </p>
             )}
 
-            <ItemList
-              items={unchecked}
-              onToggle={toggleChecked}
-              onDelete={deleteItem}
-              onUpdate={updateField}
-              expandedItem={expandedItem}
-              setExpandedItem={setExpandedItem}
-            />
+            {Object.entries(grouped).map(([category, catItems]) => (
+              <div key={category} className="mb-4">
+                <p className="text-xs font-medium text-gray-400 uppercase tracking-wider mb-2">
+                  {category}
+                </p>
+                <ItemList
+                  items={catItems}
+                  onToggle={toggleChecked}
+                  onDelete={deleteItem}
+                  onUpdate={updateField}
+                  expandedItem={expandedItem}
+                  setExpandedItem={setExpandedItem}
+                />
+              </div>
+            ))}
 
             {checked.length > 0 && (
               <div className="mt-6">
